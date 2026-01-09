@@ -97,6 +97,34 @@ function addExpense() {
         return;
     }
 
+    if (amount < 0) {
+        alert("Le montant doit être positif");
+        return;
+    }
+
+    if (amount === 0) {
+        alert("Le montant doit être supérieur à zéro");
+        return;
+    }
+    if (amount > 1000000) {
+        alert("Ca fait beaucoup là non ?");
+        return;
+    }
+
+    // Validation de la date : comparer en tant que valeur temporelle (éviter la comparaison de chaînes)
+    if (dateVal) {
+        const selected = new Date(dateVal);
+        if (isNaN(selected.getTime())) {
+            alert("Format de date invalide");
+            return;
+        }
+        // `dateVal` (datetime-local) est interprété en heure locale par new Date(...)
+        if (selected.getTime() > Date.now()) {
+            alert("La date ne peut pas être dans le futur");
+            return;
+        }
+    }
+
     if (editingId) {
         // Modifier une dépense existante
         const idx = expenses.findIndex(e => e.id === editingId);
