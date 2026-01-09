@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Manager de dépenses</title>
+    <link rel="stylesheet" href="css/index.css">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        input, select { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
+        .expense-item { border-bottom: 1px solid #ccc; padding: 10px 0; }
+        .nav { margin-bottom: 15px; }
+        /* toaster style */
+        .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 30px; background: rgba(0,0,0,0.85); color: #fff; padding: 10px 16px; border-radius: 6px; opacity: 0; transition: opacity .25s ease-in-out; z-index: 9999; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <button id="btnList">Voir la liste des dépenses</button>
+    </div>
+
+    <h1>Ajouter une dépense</h1>
+    <input type="number" id="amount" placeholder="Montant">
+    <input type="text" id="desc" placeholder="Description">
+    <input type="datetime-local" id="date" placeholder="Date/Heure">
+    <select id="cat">
+        <option value="Alimentation">Alimentation</option>
+        <option value="Loisirs">Loisirs</option>
+        <option value="Transport">Transport</option>
+    </select>
+    <button id="btnAdd">Enregistrer</button>
+
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>
