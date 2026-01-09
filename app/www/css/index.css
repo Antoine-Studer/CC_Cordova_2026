@@ -27,7 +27,7 @@ h1 {
     display:none;
 }
 
-button {
+button, a {
     border-radius: 5px;
     border: none;
     background-color: #4B946A;

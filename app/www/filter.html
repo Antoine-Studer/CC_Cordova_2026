@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html> 
+    <head> 
+        <meta charset="utf-8"> 
+        <title>Manager de dépenses - Filtrer</title> 
+        <link rel="stylesheet" href="css/index.css"> 
+        <style> 
+            body { font-family: sans-serif; padding: 20px; } 
+            input, select { display: block; width: 100%; margin-bottom: 10px; padding: 8px; } 
+            .expense-item { border-bottom: 1px solid #ccc; padding: 10px 0; } 
+            .nav { margin-bottom: 15px; } 
+        </style>
+    </head>
+    <body>
+        <h1>Filtrer les dépenses</h1>
+        <div class="nav">
+            <a href="index.html">Ajouter une dépense</a>
+            <a href="list.html">Liste des dépenses</a>
+            <a href="total_by_cat.html">Total par catégorie</a>
+        </div>
+        <form id="filterForm">
+            <label for="filterCat">Catégorie :</label>
+            <select id="filterCat">
+                <option value="">Toutes</option>
+                <option value="alimentation">Alimentation</option>
+                <option value="transports">Transports</option>
+                <option value="loisirs">Loisirs</option>
+            </select>
+            <label for="filterStartDate">Début :</label>
+            <input type="date" id="filterStartDate">
+            <label for="filterEndDate">Fin :</label>
+            <input type="date" id="filterEndDate">
+            <button type="submit">Filtrer</button>
+        </form>
+        <div id="filteredResults"></div>
+    </body>
+</html>
+<script src="cordova.js"></script>

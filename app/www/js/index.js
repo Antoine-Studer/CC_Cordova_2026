@@ -56,6 +56,13 @@ function onDeviceReady() {
         });
     }
 
+    const btnFilter = document.getElementById('btnFilter');
+    if (btnFilter) {
+        btnFilter.addEventListener('click', function() {
+            window.location.href = 'filter.html';
+        });
+    }
+    
     // Si on a un paramètre edit dans l'URL, préremplir le formulaire
     try {
         const params = new URLSearchParams(window.location.search);
@@ -320,3 +327,113 @@ function showToast(message, duration = 2000) {
     toast.style.opacity = '1';
     setTimeout(() => { toast.style.opacity = '0'; }, duration);
 }
+
+function validateFilterDates(startStr, endStr) {
+    if (!startStr && !endStr) return { ok: true };
+
+    let start = null;
+    let end = null;
+    if (startStr) {
+        start = new Date(startStr);
+        if (isNaN(start.getTime())) return { ok: false, msg: 'Date de début invalide' };
+        start = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0);
+    }
+    if (endStr) {
+        end = new Date(endStr);
+        if (isNaN(end.getTime())) return { ok: false, msg: 'Date de fin invalide' };
+        end = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999);
+        const todayEnd = new Date();
+        todayEnd.setHours(23,59,59,999);
+        if (end.getTime() > todayEnd.getTime()) return { ok: false, msg: 'La date de fin ne peut pas être dans le futur' };
+    }
+
+    if (start && end && start.getTime() > end.getTime()) return { ok: false, msg: 'La date de début doit être avant la date de fin' };
+
+    return { ok: true };
+}
+
+function renderFilteredResults(filtered) {
+    const container = document.getElementById('filteredResults');
+    if (!container) return;
+
+    if (!filtered || filtered.length === 0) {
+        container.innerHTML = '<p>Aucun résultat pour ces critères.</p>';
+        return;
+    }
+
+    let total = 0;
+    let html = `<div><strong>${filtered.length} dépense(s) trouvée(s)</strong></div>`;
+    html += '<div style="margin-top:8px;">';
+    filtered.forEach(ex => {
+        const dateStr = ex.date ? new Date(ex.date).toLocaleString() : '';
+        html += `<div class="expense-item" style="padding:8px 0;border-bottom:1px solid #eee;">
+                    <div><b>${ex.desc}</b> <small style="color:#666;">${dateStr}</small></div>
+                    <div style="color:#e91e63;">${Number(ex.amount).toFixed(2)} €</div>
+                 </div>`;
+        total += Number(ex.amount) || 0;
+    });
+    html += `</div><div style="margin-top:10px;"><strong>Total: </strong><span style="color:#e91e63;">${total.toFixed(2)} €</span></div>`;
+
+    container.innerHTML = html;
+}
+
+// Attacher le handler du formulaire de filtre si présent
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    if (!filterForm) return;
+
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // S'assurer d'avoir les dépenses chargées
+        if (!expenses || expenses.length === 0) {
+            const saved = localStorage.getItem('expenses');
+            if (saved) {
+                try { expenses = JSON.parse(saved) || []; } catch (err) { expenses = []; }
+            }
+        }
+
+        const cat = (document.getElementById('filterCat') || {}).value || '';
+        const start = (document.getElementById('filterStartDate') || {}).value || '';
+        const end = (document.getElementById('filterEndDate') || {}).value || '';
+
+        const valid = validateFilterDates(start, end);
+        if (!valid.ok) {
+            alert(valid.msg);
+            return;
+        }
+
+        let startTs = null;
+        let endTs = null;
+        if (start) {
+            const s = new Date(start);
+            startTs = new Date(s.getFullYear(), s.getMonth(), s.getDate(), 0,0,0,0).getTime();
+        }
+        if (end) {
+            const b = new Date(end);
+            endTs = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23,59,59,999).getTime();
+        }
+
+        const catNorm = cat ? cat.toString().trim().toLowerCase() : '';
+
+        const filtered = expenses.filter(ex => {
+            if (catNorm) {
+                const exCat = ex.cat ? ex.cat.toString().toLowerCase() : '';
+                if (exCat !== catNorm) return false;
+            }
+
+            if ((startTs !== null || endTs !== null) && !ex.date) return false;
+            if (ex.date) {
+                const ed = new Date(ex.date);
+                if (isNaN(ed.getTime())) return false;
+                const t = ed.getTime();
+                if (startTs !== null && t < startTs) return false;
+                if (endTs !== null && t > endTs) return false;
+            }
+
+            return true;
+        });
+
+        renderFilteredResults(filtered);
+    });
+});
