@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 let expenses = [];
+let editingId = null;
 
 function onDeviceReady() {
     // Charger les données sauvegardées au démarrage
@@ -19,9 +20,24 @@ function onDeviceReady() {
         }
     }
 
+    // Seed et remplir les catégories si nécessaire (si présent dans ta version précédente)
+    if (typeof seedCategoriesIfNeeded === 'function') {
+        seedCategoriesIfNeeded();
+        populateCategorySelect();
+    }
+
     // Attacher handlers si les éléments existent sur la page
     const btnAdd = document.getElementById('btnAdd');
     if (btnAdd) btnAdd.addEventListener('click', addExpense);
+
+    const btnCancel = document.getElementById('btnCancel');
+    if (btnCancel) {
+        btnCancel.addEventListener('click', function() {
+            cancelEdit();
+        });
+        // cacher par défaut si présent
+        btnCancel.style.display = 'none';
+    }
 
     const btnList = document.getElementById('btnList');
     if (btnList) btnList.addEventListener('click', function() {
@@ -34,6 +50,20 @@ function onDeviceReady() {
         // Retourne vers l'écran d'ajout
         window.location.href = 'index.html';
     });
+
+    // Si on a un paramètre edit dans l'URL, préremplir le formulaire
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const editParam = params.get('edit');
+        if (editParam) {
+            const id = parseInt(editParam, 10);
+            if (!isNaN(id)) {
+                populateFormForEdit(id);
+            }
+        }
+    } catch (e) {
+        // ignore
+    }
 
     // Si on est sur list.html, rendre la liste
     if (document.getElementById('list')) {
@@ -55,6 +85,37 @@ function addExpense() {
     if (!amount || !desc) {
         alert("Veuillez remplir le montant et la description");
         return;
+    }
+
+    if (editingId) {
+        // Modifier une dépense existante
+        const idx = expenses.findIndex(e => e.id === editingId);
+        if (idx !== -1) {
+            expenses[idx].amount = amount;
+            expenses[idx].desc = desc;
+            expenses[idx].cat = cat;
+            expenses[idx].date = dateVal;
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+
+            // Réinitialiser l'état d'édition
+            editingId = null;
+            const btnAdd = document.getElementById('btnAdd');
+            if (btnAdd) btnAdd.textContent = 'Enregistrer';
+            const btnCancel = document.getElementById('btnCancel');
+            if (btnCancel) btnCancel.style.display = 'none';
+
+            render();
+            showToast('Dépense modifiée');
+
+            // Nettoyage des champs
+            amountInput.value = "";
+            descInput.value = "";
+            if (dateInput) dateInput.value = "";
+
+            // Enlever le paramètre edit de l'URL sans recharger
+            try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+            return;
+        }
     }
 
     // Ajout à la liste
@@ -91,7 +152,7 @@ function render() {
     expenses.forEach(ex => {
         const dateStr = ex.date ? new Date(ex.date).toLocaleString() : '';
         html += `
-            <div class="expense-item" style="border-bottom: 1px solid #ddd; padding: 10px;">
+            <div class="expense-item expense-entry" data-id="${ex.id}" style="border-bottom: 1px solid #ddd; padding: 10px; cursor: pointer;">
                 <b>${ex.desc}</b> - ${ex.cat} <small style="color:#666;">${dateStr}</small><br>
                 <span style="color: #e91e63;">${ex.amount.toFixed(2)} €</span>
                 <button data-id="${ex.id}" class="btnDel" style="float:right;">Supprimer</button>
@@ -105,7 +166,9 @@ function render() {
     // Attacher les handlers de suppression
     const dels = document.querySelectorAll('.btnDel');
     dels.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(event) {
+            // Empêcher la propagation pour que le clic sur supprimer n'active pas l'édition
+            if (event && event.stopPropagation) event.stopPropagation();
             const id = parseInt(this.getAttribute('data-id'));
             expenses = expenses.filter(e => e.id !== id);
             localStorage.setItem('expenses', JSON.stringify(expenses));
@@ -114,6 +177,64 @@ function render() {
             showToast('Dépense supprimée');
         });
     });
+
+    // Attacher les handlers d'édition (clic sur l'élément)
+    const entries = document.querySelectorAll('.expense-entry');
+    entries.forEach(el => {
+        el.addEventListener('click', function() {
+            const id = parseInt(this.getAttribute('data-id'));
+            // Naviguer vers index.html en mode édition
+            window.location.href = 'index.html?edit=' + id;
+        });
+    });
+}
+
+function populateFormForEdit(id) {
+    const exp = expenses.find(e => e.id === id);
+    if (!exp) return;
+
+    const amountInput = document.getElementById('amount');
+    const descInput = document.getElementById('desc');
+    const catInput = document.getElementById('cat');
+    const dateInput = document.getElementById('date');
+
+    if (amountInput) amountInput.value = exp.amount;
+    if (descInput) descInput.value = exp.desc;
+
+    if (catInput) {
+        // si l'option n'existe pas, essayer de l'ajouter
+        let optionExists = Array.from(catInput.options).some(o => o.value === exp.cat);
+        if (!optionExists && exp.cat) {
+            const opt = document.createElement('option');
+            opt.value = exp.cat;
+            opt.textContent = exp.cat;
+            catInput.appendChild(opt);
+        }
+        catInput.value = exp.cat || '';
+    }
+
+    if (dateInput) dateInput.value = exp.date || '';
+
+    editingId = id;
+    const btnAdd = document.getElementById('btnAdd');
+    if (btnAdd) btnAdd.textContent = 'Modifier';
+    const btnCancel = document.getElementById('btnCancel');
+    if (btnCancel) btnCancel.style.display = 'inline-block';
+}
+
+function cancelEdit() {
+    editingId = null;
+    const amountInput = document.getElementById('amount');
+    const descInput = document.getElementById('desc');
+    const dateInput = document.getElementById('date');
+    if (amountInput) amountInput.value = '';
+    if (descInput) descInput.value = '';
+    if (dateInput) dateInput.value = '';
+    const btnAdd = document.getElementById('btnAdd');
+    if (btnAdd) btnAdd.textContent = 'Enregistrer';
+    const btnCancel = document.getElementById('btnCancel');
+    if (btnCancel) btnCancel.style.display = 'none';
+    try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
 }
 
 function showToast(message, duration = 2000) {

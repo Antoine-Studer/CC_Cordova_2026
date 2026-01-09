@@ -76,6 +76,9 @@ h1 {
     overflow:visible;
     padding:0px;
     text-align:center;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .event {
@@ -115,4 +118,18 @@ h1 {
     body {
         background-image:linear-gradient(to bottom, #585858 0%, #1B1B1B 51%);
     }
+}
+
+
+button {
+    border-radius: 5px;
+    border: none;
+    background-color: #4B946A;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
 }
