@@ -20,24 +20,9 @@ function onDeviceReady() {
         }
     }
 
-    // Seed et remplir les catégories si nécessaire (si présent dans ta version précédente)
-    if (typeof seedCategoriesIfNeeded === 'function') {
-        seedCategoriesIfNeeded();
-        populateCategorySelect();
-    }
-
     // Attacher handlers si les éléments existent sur la page
     const btnAdd = document.getElementById('btnAdd');
     if (btnAdd) btnAdd.addEventListener('click', addExpense);
-
-    const btnCancel = document.getElementById('btnCancel');
-    if (btnCancel) {
-        btnCancel.addEventListener('click', function() {
-            cancelEdit();
-        });
-        // cacher par défaut si présent
-        btnCancel.style.display = 'none';
-    }
 
     const btnList = document.getElementById('btnList');
     if (btnList) btnList.addEventListener('click', function() {
@@ -46,10 +31,30 @@ function onDeviceReady() {
     });
 
     const btnBack = document.getElementById('btnBack');
-    if (btnBack) btnBack.addEventListener('click', function() {
-        // Retourne vers l'écran d'ajout
-        window.location.href = 'index.html';
-    });
+    if (btnBack) {
+        // Comportement du bouton Back selon l'écran
+        if (document.getElementById('category-totals')) {
+            btnBack.addEventListener('click', function() {
+                window.location.href = 'list.html';
+            });
+        } else if (document.getElementById('list')) {
+            btnBack.addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+        } else {
+            // Par défaut retourne à index
+            btnBack.addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+        }
+    }
+
+    const btnTotalByCat = document.getElementById('btnTotalByCat');
+    if (btnTotalByCat) {
+        btnTotalByCat.addEventListener('click', function() {
+            window.location.href = 'total_by_cat.html';
+        });
+    }
 
     // Si on a un paramètre edit dans l'URL, préremplir le formulaire
     try {
@@ -68,6 +73,11 @@ function onDeviceReady() {
     // Si on est sur list.html, rendre la liste
     if (document.getElementById('list')) {
         render();
+    }
+
+    // Si on est sur la page totals par catégorie, afficher les totaux
+    if (document.getElementById('category-totals')) {
+        renderCategoryTotals();
     }
 }
 
@@ -187,6 +197,44 @@ function render() {
             window.location.href = 'index.html?edit=' + id;
         });
     });
+}
+
+function renderCategoryTotals() {
+    const container = document.getElementById('category-totals');
+    if (!container) return;
+
+    // Calculer les totaux par catégorie
+    const totals = expenses.reduce((acc, ex) => {
+        const key = ex.cat || 'Non catégorisé';
+        if (!acc[key]) acc[key] = { total: 0, count: 0 };
+        acc[key].total += Number(ex.amount) || 0;
+        acc[key].count += 1;
+        return acc;
+    }, {});
+
+    // Transformer en tableau trié par total décroissant
+    const rows = Object.keys(totals).map(cat => ({
+        category: cat,
+        total: totals[cat].total,
+        count: totals[cat].count
+    })).sort((a, b) => b.total - a.total);
+
+    // Générer le HTML
+    let html = '<div class="category-list">';
+    if (rows.length === 0) {
+        html += '<p>Aucune dépense enregistrée.</p>';
+    } else {
+        rows.forEach(r => {
+            html += `<div class="category-row" style="padding:8px 0;border-bottom:1px solid #eee;">
+                        <strong>${r.category}</strong>
+                        <div style="float:right;color:#e91e63;">${r.total.toFixed(2)} €</div>
+                        <div style="clear:both;color:#666;">${r.count} dépense(s)</div>
+                     </div>`;
+        });
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
 }
 
 function populateFormForEdit(id) {

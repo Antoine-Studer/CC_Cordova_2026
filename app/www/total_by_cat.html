@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Expense Manager - Liste</title>
+    <title>Expense Manager - Total par Catégorie</title>
     <link rel="stylesheet" href="css/index.css">
     <style>
         body { font-family: sans-serif; padding: 20px; }
@@ -11,18 +11,14 @@
         .nav { margin-bottom: 15px; }
     </style>
 </head>
-
 <body>
     <div class="nav">
-        <button id="btnBack">Ajouter une dépense</button>
-        <button id="btnTotalByCat">Voir le total par catégorie</button>
+        <button id="btnBack">Liste des dépenses</button>
     </div>
-
-    <h2>Total : <span id="total">0</span> €</h2>
-    <div id="list"></div>
-
-    <div id="toast" class="toast"></div>
-
+    <div class="app">
+        <h1>Total par Catégorie</h1>
+        <div id="category-totals"></div>
+    </div>
     <script src="cordova.js"></script>
     <script src="js/index.js"></script>
 </body>
